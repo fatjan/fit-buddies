@@ -2,17 +2,22 @@ from flask import Flask
 from flask_sqlalchemy import SQLAlchemy
 from flask_migrate import Migrate
 from .main.routes import main_bp
+from config import config
+from app.main.models import db
+import os
 
-def create_app(env=None):
+
+def create_app():
     # Create the Flask app
     app = Flask(__name__)
 
     # Configure app settings
     app.config["SECRET_KEY"] = "your_secret_key_here"
-    app.config["SQLALCHEMY_DATABASE_URI"] = "postgresql://fatma.storage:4OweuG2zVRAf@ep-shrill-darkness-863214.ap-southeast-1.aws.neon.tech/neondb"
+    env = os.environ.get('FLASK_ENV', 'development')
+
     app.config.from_object(config[env])
     
-    db = SQLAlchemy(app)
+    db.init_app(app)
     migrate = Migrate(app, db)
 
     # Register blueprints
