@@ -1,5 +1,7 @@
-from flask import Blueprint, jsonify, request
+from flask import Blueprint, jsonify, request, abort
 from .models import User, db
+from .utils import is_valid_email
+import bcrypt
 
 main_bp = Blueprint("main", __name__)
 
@@ -17,7 +19,6 @@ def get_users():
             "id": user.id,
             "name": user.name,
             "email": user.email
-            # Add more fields as needed
         }
         user_list.append(user_data)
 
@@ -32,14 +33,32 @@ def signup():
     email = data.get("email")
     password = data.get("password")
 
-    # Perform validation checks on the data if needed
+    # Perform validation checks on the data
+    if not username or not email or not password:
+        abort(400, "Username, email, and password are required.")
 
+    if len(username) < 3 or len(username) > 20:
+        abort(400, "Username must be between 3 and 20 characters.")
+
+    if not is_valid_email(email):
+        abort(400, "Invalid email address.")
+
+    # Hash the password
+    hashed_password = bcrypt.hashpw(password.encode("utf-8"), bcrypt.gensalt())
+    
     # Create a new User instance
-    new_user = User(username=username, email=email, password=password)
+    new_user = User(username=username, email=email, password=hashed_password)
 
     # Add the new user to the database
     db.session.add(new_user)
     db.session.commit()
 
-    # Return a success message or any other desired response
-    return jsonify(message="User registered successfully")
+    status_code = 200
+    response_data = {
+        "message": "User created successfully",
+        "user_id": new_user.id,
+        "username": new_user.username,
+        "email": new_user.email
+    }
+
+    return jsonify(response_data), status_code  
