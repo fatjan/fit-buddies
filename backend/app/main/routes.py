@@ -17,12 +17,13 @@ def get_users():
     for user in users:
         user_data = {
             "id": user.id,
-            "name": user.name,
-            "email": user.email
+            "username": user.username,
+            "email": user.email,
+            "created_at": user.created_at,
         }
         user_list.append(user_data)
 
-    return jsonify(users=user_list)
+    return jsonify(users=user_list), 200
 
 @main_bp.route("/signup", methods=["POST"])
 def signup():
