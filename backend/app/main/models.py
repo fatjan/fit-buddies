@@ -78,6 +78,19 @@ class User(db.Model):
 
         return token
 
+    @staticmethod
+    def get_user_id_from_token(token):
+        try:
+            decoded_token = jwt.decode(token, 'your_secret_key', algorithms=['HS256'])
+            user_id = decoded_token['user_id']
+            return user_id
+        except jwt.ExpiredSignatureError:
+            # Handle expired token
+            return None
+        except jwt.InvalidTokenError:
+            # Handle invalid token
+            return None
+
 class Workout(db.Model):
     id = db.Column(db.Integer, primary_key=True)
     name = db.Column(db.String(100), nullable=False)
