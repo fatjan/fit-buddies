@@ -1,0 +1,40 @@
+# macOS
+.DS_Store
+
+# React Native
+node_modules/
+npm-debug.log
+yarn-error.log
+metro-cache/
+android/build/
+ios/build/
+android/app/build/
+ios/Pods/
+ios/*.xcworkspace/
+ios/*.xcuserdatad/
+*.iml
+*.xcodeproj/xcuserdata/
+*.xcodeproj/project.xcworkspace/
+*.pbxproj
+*.xccheckout
+ios/Pods/Manifest.lock
+ios/Pods/Target Support Files/
+ios/Pods/GeneratedHeaders/
+ios/Pods/*.mode1v3
+ios/Pods/*.mode2v3
+ios/Pods/*.perspectivev3
+ios/Pods/xcshareddata/
+ios/Pods/*/Pods-*.debug.xcconfig
+ios/Pods/*/Pods-*.release.xcconfig
+
+# Editor/IDE
+.vscode/
+.idea/
+
+# Logs and debugging
+logs/
+*.log
+
+# Dependency lock files
+yarn.lock
+package-lock.json
