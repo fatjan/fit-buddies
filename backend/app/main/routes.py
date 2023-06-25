@@ -19,6 +19,7 @@ def get_users():
             "id": user.id,
             "username": user.username,
             "email": user.email,
+            "name": user.name,
             "created_at": user.created_at,
         }
         user_list.append(user_data)
@@ -46,7 +47,7 @@ def signup():
         abort(400, "Invalid email address.")
 
     # Hash the password
-    hashed_password = bcrypt.hashpw(password.encode("utf-8"), bcrypt.gensalt())
+    hashed_password = bcrypt.hashpw(password.encode('utf-8'), bcrypt.gensalt())
     
     # Create a new User instance
     new_user = User(username=username, email=email, password=hashed_password, name=name)
@@ -66,6 +67,22 @@ def signup():
     }
 
     return jsonify(response_data), status_code  
+
+
+@main_bp.route("/login", methods=["POST"])
+def login():
+    username = request.json.get('username')
+    password = request.json.get('password')
+
+    if not username or not password:
+        return jsonify({'message': 'Username and password are required'}), 400
+
+    user = User.get_user_by_username(username)
+    print('user', user)
+    if user and User.check_password(password, user['password']):
+        return jsonify({'message': 'Login successful'})
+
+    return jsonify({'message': 'Invalid username or password'}), 401
 
 # from flask import jsonify, request
 # from .controller.user import get_users, signup
