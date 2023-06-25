@@ -1,5 +1,5 @@
 from flask import Blueprint, jsonify, request, abort
-from .models import User, db
+from .models import User, db, Workout
 from .utils import is_valid_email
 import bcrypt
 
@@ -78,27 +78,78 @@ def login():
         return jsonify({'message': 'Username and password are required'}), 400
 
     user = User.get_user_by_username(username)
-    print('user', user)
     if user and User.check_password(password, user['password']):
-        return jsonify({'message': 'Login successful'})
+        token = User.generate_token(user['id'])
+        return jsonify({'message': 'Login successful', "token": token}), 200
 
     return jsonify({'message': 'Invalid username or password'}), 401
 
-# from flask import jsonify, request
-# from .controller.user import get_users, signup
-# from app.main import main_bp
+@main_bp.route('/users/<int:user_id>', methods=['PUT'])
+def edit_user(user_id):
+    # Get the data from the request body
+    data = request.get_json()
 
-# @main_bp.route("/")
-# def index():
-#     return jsonify(message="Welcome to the main endpoint")
+    # Retrieve the user from the database based on the user_id
+    user = User.query.get(user_id)
 
-# @main_bp.route("/users",  methods=["GET"])
-# def get_users_route():
-#     users = get_users()
-#     return jsonify(users=users), 200
+    if not user:
+        return jsonify({'message': 'User not found'})
 
-# @main_bp.route("/signup", methods=["POST"])
-# def signup_route():
-#     data = request.get_json()
-#     response_data = signup(data)
-#     return jsonify(response_data), 200
+    # Update the user attributes if provided in the request data
+    if 'username' in data:
+        user.username = data['username']
+
+    if 'email' in data:
+        if not is_valid_email(data['email']):
+            abort(400, "Invalid email address.")
+        user.email = data['email']
+
+    if 'name' in data:
+        user.name = data['name']
+
+    # Save the changes to the database
+    db.session.commit()
+
+    # Return a response indicating the successful update
+    return jsonify({'message': 'User updated successfully'}), 200
+
+@main_bp.route('/workout', methods=['POST'])
+def create_workout():
+    data = request.get_json()
+    name = data.get('name')
+    duration = data.get('duration')
+    intensity = data.get('intensity')
+    calories_burned = data.get('calories_burned')
+    user_id = request.headers.get('user_id')
+
+    if not name or not duration or not intensity or not calories_burned:
+        return jsonify({'message': 'Missing required fields'}), 400
+
+    workout = Workout(name=name, duration=duration, intensity=intensity, calories_burned=calories_burned, user_id=user_id)
+
+    db.session.add(workout)
+    db.session.commit()
+
+    return jsonify({'message': 'Workout created successfully'}), 201
+
+@main_bp.route('/workouts', methods=['GET'])
+def get_workouts():
+    user_id = request.headers.get('user_id')
+    print(user_id)
+    if not user_id:
+        return jsonify({'message': 'Missing user_id in headers'}), 400
+
+    workouts = Workout.query.filter_by(user_id=user_id).all()
+
+    workout_data = []
+    for workout in workouts:
+        workout_data.append({
+            'id': workout.id,
+            'name': workout.name,
+            'duration': workout.duration,
+            'intensity': workout.intensity,
+            'calories_burned': workout.calories_burned,
+            'created_at': workout.created_at
+        })
+
+    return jsonify({'workouts': workout_data}), 200
