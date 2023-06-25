@@ -115,12 +115,25 @@ def edit_user(user_id):
 
 @main_bp.route('/workout', methods=['POST'])
 def create_workout():
+    auth_header = request.headers.get('Authorization')
+    if not auth_header:
+        return jsonify({'message': 'Authorization header is missing'}), 401
+
+    if not auth_header.startswith('Bearer '):
+        return jsonify({'message': 'Invalid authorization header'}), 401
+
+    token = auth_header.split(' ')[1]
+   
+    # Retrieve the user ID from the token
+    user_id = User.get_user_id_from_token(token)
+    if not user_id:
+        return jsonify({'message': 'Invalid or expired token'}), 401
+    
     data = request.get_json()
     name = data.get('name')
     duration = data.get('duration')
     intensity = data.get('intensity')
     calories_burned = data.get('calories_burned')
-    user_id = request.headers.get('user_id')
 
     if not name or not duration or not intensity or not calories_burned:
         return jsonify({'message': 'Missing required fields'}), 400
@@ -134,10 +147,19 @@ def create_workout():
 
 @main_bp.route('/workouts', methods=['GET'])
 def get_workouts():
-    user_id = request.headers.get('user_id')
-    print(user_id)
+    auth_header = request.headers.get('Authorization')
+    if not auth_header:
+        return jsonify({'message': 'Authorization header is missing'}), 401
+
+    if not auth_header.startswith('Bearer '):
+        return jsonify({'message': 'Invalid authorization header'}), 401
+
+    token = auth_header.split(' ')[1]
+    
+    # Retrieve the user ID from the token
+    user_id = User.get_user_id_from_token(token)
     if not user_id:
-        return jsonify({'message': 'Missing user_id in headers'}), 400
+        return jsonify({'message': 'Invalid or expired token'}), 401
 
     workouts = Workout.query.filter_by(user_id=user_id).all()
 
