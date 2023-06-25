@@ -2,6 +2,11 @@ from flask import Blueprint, jsonify, request, abort
 from .models import User, db, Workout
 from .utils import is_valid_email
 import bcrypt
+from dotenv import load_dotenv
+import os
+import requests
+
+load_dotenv('../../.env')
 
 main_bp = Blueprint("main", __name__)
 
@@ -175,3 +180,108 @@ def get_workouts():
         })
 
     return jsonify({'workouts': workout_data}), 200
+
+@main_bp.route('/weather', methods=['GET'])
+def get_weather():
+    city = request.args.get('city')
+    api_key = os.environ.get('WEATHER_API_KEY')
+
+    # API endpoint URL
+    url = f"https://api.weatherapi.com/v1/current.json?q={city}&key={api_key}"
+
+    try:
+        # Send GET request to the API
+        response = requests.get(url)
+        response.raise_for_status()  # Raise an exception if the request was unsuccessful
+
+        # Parse the JSON response
+        data = response.json()
+
+        # Extract relevant information from the response
+        result = {
+            'location': data['location']['name'],
+            'region': data['location']['region'],
+            'country': data['location']['country'],
+            'temperature': data['current']['temp_c'],
+            'condition': data['current']['condition']['text'],
+            'feels_like': data['current']['feelslike_c'],
+            'time': data['location']['localtime'],
+            'uv': data['current']['uv'],
+        }
+        return result
+    except requests.exceptions.HTTPError as err:
+        return f"HTTP Error occurred: {err}"
+    except requests.exceptions.RequestException as err:
+        return f"Request Exception occurred: {err}"
+
+@main_bp.route('/forecast', methods=['GET'])
+def get_forecaset_weather():
+    city = request.args.get('city')
+    api_key = os.environ.get('WEATHER_API_KEY')
+
+    # API endpoint URL
+    url = f"https://api.weatherapi.com/v1/forecast.json?q={city}&key={api_key}"
+
+    days = request.args.get('days')
+    if days:
+        url += f"&days={days}"
+    
+    hour = request.args.get('hour')
+    if hour:
+        url += f"&hour={hour}"
+
+    try:
+        # Send GET request to the API
+        response = requests.get(url)
+        response.raise_for_status()  # Raise an exception if the request was unsuccessful
+
+        # Parse the JSON response
+        data = response.json()
+
+        if 'forecastday' in data['forecast']:
+            forecast = data['forecast']['forecastday']
+            forecast_data = []
+            for i in range(len(forecast)):
+                item = forecast[i]
+                day = {
+                    'date': item['date'],
+                    'max_temp': item['day']['maxtemp_c'],
+                    'min_temp': item['day']['mintemp_c'],
+                    'condition': item['day']['condition']['text'],
+                    'uv': item['day']['uv'],
+                    'daily_chance_of_rain': item['day']['daily_chance_of_rain'],
+                    'daily_will_it_rain': item['day']['daily_will_it_rain'],
+                }
+                hour = {
+                    'time': item['hour'][0]['time'],
+                    'temp_c': item['hour'][0]['temp_c'],
+                    'condition': item['hour'][0]['condition']['text'],
+                    'chance_of_rain': item['hour'][0]['chance_of_rain'],
+                    'will_it_rain': item['hour'][0]['will_it_rain'],
+                    'feels_like': item['hour'][0]['feelslike_c'],
+                    'uv': item['hour'][0]['uv'],
+                }
+                forecast_data.append({
+                    'day': day,
+                    'hour': hour
+                })
+
+        # Extract relevant information from the response
+        result = {
+            'location': data['location']['name'],
+            'region': data['location']['region'],
+            'country': data['location']['country'],
+            'current': {
+                'temperature': data['current']['temp_c'],
+                'condition': data['current']['condition']['text'],
+                'feels_like': data['current']['feelslike_c'],
+                'time': data['location']['localtime'],
+                'uv': data['current']['uv'],
+            },
+            'forecast': forecast_data
+        }
+        return result
+    except requests.exceptions.HTTPError as err:
+        return f"HTTP Error occurred: {err}"
+    except requests.exceptions.RequestException as err:
+        return f"Request Exception occurred: {err}"
