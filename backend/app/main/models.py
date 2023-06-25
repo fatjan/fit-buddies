@@ -1,6 +1,7 @@
-from datetime import datetime
+from datetime import datetime, timedelta
 from flask_sqlalchemy import SQLAlchemy
 import bcrypt
+import jwt
 
 db = SQLAlchemy()
 
@@ -10,6 +11,9 @@ class User(db.Model):
     email = db.Column(db.String(120), unique=True, nullable=False)
     password = db.Column(db.String(255), nullable=False)
     name = db.Column(db.String(50), nullable=True)
+    age = db.Column(db.Integer, nullable=True)
+    gender = db.Column(db.Integer, nullable=True)
+    weight = db.Column(db.Integer, nullable=True)
     created_at = db.Column(db.DateTime, default=datetime.utcnow)
 
     def __repr__(self):
@@ -18,6 +22,9 @@ class User(db.Model):
             "username": self.username,
             "name": self.name,
             "email": self.email,
+            "age": self.age,
+            "gender": self.gender,
+            "weight": self.weight,
             "created_at": self.created_at
         }
 
@@ -58,6 +65,19 @@ class User(db.Model):
         print(login_password, password_hash)
         return bcrypt.checkpw(login_password.encode('utf-8'), bytes.fromhex(password_hash[2:]))
 
+    @staticmethod
+    def generate_token(user_id):
+        # Set the expiration time for the token (e.g., 1 day from the current time)
+        expiration = datetime.utcnow() + timedelta(days=1)
+
+        # Create the payload containing user information and expiration time
+        payload = {'user_id': user_id, 'exp': expiration}
+
+        # Generate the JWT token using a secret key
+        token = jwt.encode(payload, 'your_secret_key', algorithm='HS256')
+
+        return token
+
 class Workout(db.Model):
     id = db.Column(db.Integer, primary_key=True)
     name = db.Column(db.String(100), nullable=False)
@@ -65,6 +85,8 @@ class Workout(db.Model):
     intensity = db.Column(db.Integer, nullable=False)
     calories_burned = db.Column(db.Integer, nullable=False)
     created_at = db.Column(db.DateTime, default=datetime.utcnow)
+    user_id = db.Column(db.Integer, db.ForeignKey('user.id'), nullable=False)
+    user = db.relationship('User', backref=db.backref('workouts', lazy=True))
 
     def __repr__(self):
         return {
@@ -73,5 +95,6 @@ class Workout(db.Model):
             "duration": self.name,
             "intensity": self.intensity,
             "calories_burned": self.calories_burned,
-            "created_at": self.created_at
+            "created_at": self.created_at,
+            "user_id": self.user_id
         }
