@@ -31,6 +31,7 @@ def signup():
 
     # Extract the required information from the request data
     username = data.get("username")
+    name = data.get("name")
     email = data.get("email")
     password = data.get("password")
 
@@ -48,7 +49,7 @@ def signup():
     hashed_password = bcrypt.hashpw(password.encode("utf-8"), bcrypt.gensalt())
     
     # Create a new User instance
-    new_user = User(username=username, email=email, password=hashed_password)
+    new_user = User(username=username, email=email, password=hashed_password, name=name)
 
     # Add the new user to the database
     db.session.add(new_user)
@@ -59,7 +60,28 @@ def signup():
         "message": "User created successfully",
         "user_id": new_user.id,
         "username": new_user.username,
-        "email": new_user.email
+        "name": new_user.name,
+        "email": new_user.email,
+        "created_at": new_user.created_at,
     }
 
     return jsonify(response_data), status_code  
+
+# from flask import jsonify, request
+# from .controller.user import get_users, signup
+# from app.main import main_bp
+
+# @main_bp.route("/")
+# def index():
+#     return jsonify(message="Welcome to the main endpoint")
+
+# @main_bp.route("/users",  methods=["GET"])
+# def get_users_route():
+#     users = get_users()
+#     return jsonify(users=users), 200
+
+# @main_bp.route("/signup", methods=["POST"])
+# def signup_route():
+#     data = request.get_json()
+#     response_data = signup(data)
+#     return jsonify(response_data), 200
