@@ -62,7 +62,6 @@ class User(db.Model):
 
     @staticmethod
     def check_password(login_password, password_hash):
-        print(login_password, password_hash)
         return bcrypt.checkpw(login_password.encode('utf-8'), bytes.fromhex(password_hash[2:]))
 
     @staticmethod
